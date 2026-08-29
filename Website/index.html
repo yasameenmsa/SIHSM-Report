@@ -51,7 +51,7 @@
   .tabs{display:flex;gap:6px;margin-bottom:12px}
   .tab{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#0f172a;color:var(--text);cursor:pointer}
   .tab.active{background:#0e1a33;border-color:#1e3a5f}
-  #dwv{height:78vh;min-height:520px;background:#020617;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px #1e3a5f inset}
+  #dwv{height:72vh;min-height:420px;background:#020617;border:1px solid var(--border);border-radius:14px;overflow:hidden}
   .notice{background:#0f172a;border:1px solid #1e3a5f;border-left:4px solid var(--accent);padding:10px 12px;border-radius:10px;color:var(--muted);font-size:13px;margin-bottom:12px}
 </style>
 <!-- DWV for DICOM viewing -->
@@ -88,8 +88,8 @@
     <div id="nav"></div>
     <h3 style="margin-top:16px"> viewers</h3>
     <div class="tabs" style="flex-direction:column">
-      <button class="tab" id="tabPng" onclick="showTab('png')">🖼️ PNG Gallery</button>
-      <button class="tab active" id="tabDicom" onclick="showTab('dicom')">🩻 DICOM Viewer</button>
+      <button class="tab active" id="tabPng" onclick="showTab('png')">🖼️ PNG Gallery</button>
+      <button class="tab" id="tabDicom" onclick="showTab('dicom')">🩻 DICOM Viewer</button>
     </div>
     <div class="notice" style="margin-top:10px">
       PNG = صور جاهزة سريعة (lossless, windowed).<br>DICOM = الملفات الأصلية مع HU كاملة — تُحمّل في العارض أدناه.
@@ -103,17 +103,17 @@
       <span class="badge" id="dicomBadge" style="display:none">DICOM ready</span>
       <select id="perPage" onchange="render()" style="background:#0f172a;color:var(--text);border:1px solid var(--border);padding:8px 10px;border-radius:10px">
         <option value="40">40 / page</option>
-        <option value="80" selected>80 / page</option>
+        <option value="80">80 / page</option>
         <option value="160">160 / page</option>
-        <option value="9999">All</option>
+        <option value="9999" selected>All</option>
       </select>
     </div>
 
     <!-- PNG Gallery -->
-    <div id="pngView" style="display:none"></div>
+    <div id="pngView"></div>
 
-    <!-- DICOM View — PRIMARY -->
-    <div id="dicomView" style="display:block">
+    <!-- DICOM View -->
+    <div id="dicomView" style="display:none">
       <div class="notice">
         <b>DICOM Viewer (DWV)</b> — اختر سلسلة ثم اضغط <b>Load DICOM</b>. يحتاج أن يكون الموقع يعمل عبر <code>http://</code> (python -m http.server) وليس <code>file://</code> حتى يتم تحميل ملفات DICOM.
         <br>أو اسحب ملفات DICOM من جهازك مباشرة إلى المربع أدناه.
@@ -217,7 +217,7 @@ async function init(){
   buildDicomSelect();
   render();
   initDwv();
-  showTab('dicom');
+  showTab('png');
 }
 
 function buildNav(){
