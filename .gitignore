@@ -1,0 +1,4 @@
+﻿# Keep everything requested, ignore system junk
+Thumbs.db
+.DS_Store
+*.tmp
