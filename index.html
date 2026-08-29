@@ -62,25 +62,12 @@
     <div class="meta" id="headerMeta">Loading manifest…</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <button class="btn-ghost" onclick="document.getElementById('gate').classList.remove('hidden')">🔒 Password</button>
     <button class="btn" onclick="toggleDicom()">🩻 DICOM Viewer</button>
     <a class="btn-ghost" style="text-decoration:none" href="../_PNG_Export_HighQuality" target="_blank">📁 Open PNG folder</a>
   </div>
 </header>
 
-<!-- Password Gate -->
-<div id="gate">
-  <div class="gate-card">
-    <h2>🔒 Protected Report</h2>
-    <p>هذا التقرير محمي بكلمة سر. أدخل كلمة السر للمتابعة.<br><span style="color:#7dd3fc">Enter password to view images.</span></p>
-    <!-- CHANGE PASSWORD HERE -->
-    <input id="pwInput" type="password" placeholder="كلمة السر / Password" autofocus>
-    <button class="btn" style="width:100%" onclick="checkPassword()">دخول — Enter</button>
-    <div id="pwErr" style="color:#fca5a5;font-size:13px;margin-top:8px;display:none">كلمة السر غير صحيحة — Wrong password</div>
-  </div>
-</div>
-
-<div class="layout" id="app" style="display:none">
+<div class="layout" id="app">
   <aside class="sidebar">
     <h3>Series — السلاسل</h3>
     <div id="nav"></div>
@@ -166,32 +153,17 @@
 </div>
 
 <script>
-// ===== CONFIG =====
-const CORRECT_PASSWORD = "sihsm2026"; // <-- غيّر كلمة السر هنا
-const GATE_KEY = "sihsm_gate_ok";
-
-function checkPassword(){
-  const v = document.getElementById('pwInput').value;
-  if(v === CORRECT_PASSWORD){
-    sessionStorage.setItem(GATE_KEY, "1");
-    openApp();
-  } else {
-    document.getElementById('pwErr').style.display='block';
-    document.getElementById('pwInput').select();
-  }
-}
-document.getElementById('pwInput').addEventListener('keydown', e=>{ if(e.key==='Enter') checkPassword(); });
+// ===== OPEN ACCESS (password removed per user request) =====
 function openApp(){
-  document.getElementById('gate').classList.add('hidden');
-  document.getElementById('app').style.display='grid';
   init();
 }
-if(sessionStorage.getItem(GATE_KEY)==="1"){ openApp(); }
 
 // Detect base prefix for images (when site is in /Website subfolder)
 const isInWebsite = location.pathname.includes("/Website");
 const prefix = isInWebsite ? "../" : "";
 let manifest=null, filtered=null, currentSeries="ALL", lbIndex=0, lbList=[];
+
+document.addEventListener('DOMContentLoaded', openApp);
 
 async function init(){
   if(manifest) return;
