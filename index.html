@@ -25,9 +25,9 @@
   .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
   .toolbar input{background:#0f172a;border:1px solid var(--border);color:var(--text);padding:9px 11px;border-radius:10px;min-width:240px}
   .badge{background:#0f1f3a;border:1px solid #1e3a5f;color:#7dd3fc;padding:6px 10px;border-radius:20px;font-size:12px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-  .card img{width:100%;height:150px;object-fit:contain;background:#020617;display:block}
+  .card img{width:100%;height:220px;object-fit:contain;background:#020617;display:block;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges}
   .card .cap{padding:8px 9px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
   .card .cap b{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .section-title{margin:18px 0 10px;padding:10px 12px;background:#0f172a;border:1px solid var(--border);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
@@ -36,7 +36,7 @@
   /* lightbox */
   #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
   #lightbox.open{display:flex}
-  #lightbox img{max-width:min(92vw,1200px);max-height:82vh;object-fit:contain;background:#020617;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+  #lightbox img{max-width:min(96vw,1600px);max-height:88vh;object-fit:contain;background:#020617;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6);image-rendering:-webkit-optimize-contrast}
   #lightbox .lb-ui{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none}
   #lightbox .lb-ui *{pointer-events:auto}
   #lightbox .lb-caption{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.85);border:1px solid var(--border);padding:8px 12px;border-radius:10px;font-size:13px;color:var(--text);max-width:90vw;text-align:center}
