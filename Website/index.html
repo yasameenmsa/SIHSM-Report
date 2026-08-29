@@ -51,11 +51,9 @@
   .tabs{display:flex;gap:6px;margin-bottom:12px}
   .tab{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#0f172a;color:var(--text);cursor:pointer}
   .tab.active{background:#0e1a33;border-color:#1e3a5f}
-  #dwv{height:72vh;min-height:420px;background:#020617;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  #cs-viewport{height:72vh;min-height:420px;background:#020617;border:1px solid var(--border);border-radius:14px;overflow:hidden}
   .notice{background:#0f172a;border:1px solid #1e3a5f;border-left:4px solid var(--accent);padding:10px 12px;border-radius:10px;color:var(--muted);font-size:13px;margin-bottom:12px}
 </style>
-<!-- DWV for DICOM viewing -->
-<script src="https://unpkg.com/dwv@0.32.2/dist/dwv.min.js"></script>
 </head>
 <body>
 <header>
@@ -115,7 +113,7 @@
     <!-- DICOM View -->
     <div id="dicomView" style="display:none">
       <div class="notice">
-        <b>DICOM Viewer (DWV)</b> — اختر سلسلة ثم اضغط <b>Load DICOM</b>. يحتاج أن يكون الموقع يعمل عبر <code>http://</code> (python -m http.server) وليس <code>file://</code> حتى يتم تحميل ملفات DICOM.
+        <b>DICOM Viewer (Cornerstone.js)</b> — اختر سلسلة ثم اضغط <b>Load DICOM</b>. مرر الفأرة للتنقل بين الصور، اسحب للتحكم بالإضاءة.
         <br>أو اسحب ملفات DICOM من جهازك مباشرة إلى المربع أدناه.
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
@@ -123,14 +121,12 @@
         <button class="btn" onclick="loadDicomSeries()">Load DICOM series</button>
         <label class="btn-ghost" style="cursor:pointer">📂 Open local DICOM<input type="file" id="dicomFile" multiple style="display:none" onchange="loadLocalDicom(this.files)"></label>
       </div>
-      <div id="dwv">
-        <div id="dwv-layer" style="width:100%;height:100%"></div>
-      </div>
+      <div id="cs-viewport"></div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn-ghost" onclick="dwvApp && dwvApp.setTool('Scroll')">Scroll</button>
-        <button class="btn-ghost" onclick="dwvApp && dwvApp.setTool('ZoomAndPan')">Zoom/Pan</button>
-        <button class="btn-ghost" onclick="dwvApp && dwvApp.setTool('WindowLevel')">Window/Level</button>
-        <button class="btn-ghost" onclick="dwvApp && dwvApp.resetDisplay()">Reset</button>
+        <button class="btn-ghost" onclick="csPrev()">‹ Prev</button>
+        <button class="btn-ghost" onclick="csNext()">Next ›</button>
+        <button class="btn-ghost" onclick="csReset()">Reset</button>
+        <a class="btn-ghost" style="text-decoration:none" href="https://viewer.ohif.org/" target="_blank">OHIF Viewer ↗</a>
       </div>
       <!-- Doctor Download — ZIPs hosted as GitHub Release assets (bypasses 100MB Pages limit) -->
       <div style="margin-top:18px;padding:14px;background:#0f172a;border:1px solid #1e3a5f;border-radius:12px">
@@ -212,13 +208,12 @@ async function init(){
     res = await fetch(url);
   }
   manifest = await res.json();
-  document.getElementById('headerMeta').textContent = `${manifest.total_png} PNGs • ${manifest.series.length} series • Lossless (windowed)`;
+  document.getElementById('headerMeta').textContent = `${manifest.total_png} PNGs • ${manifest.series.length} series • Lossless (sharpened)`;
   buildNav();
   buildDicomSelect();
   render();
-  initDwv();
   showTab('png');
-}
+  ensureCornerstone().catch(()=>{});
 
 function buildNav(){
   const nav = document.getElementById('nav');
@@ -329,73 +324,76 @@ function showTab(t){
 }
 function toggleDicom(){ showTab(document.getElementById('dicomView').style.display==='none' ? 'dicom' : 'png'); }
 
-// DWV
-let dwvApp=null;
-function initDwv(){
-  if(typeof dwv==='undefined') return;
-  dwvApp = new dwv.App();
-  dwvApp.init({
-    dataViewConfigs: {'*': [{divId: 'dwv'}]},
-    tools: {Scroll: {}, ZoomAndPan: {}, WindowLevel: {}}
-  });
-  // global listeners — must be BEFORE loadURLs
-  dwvApp.addEventListener('load', ()=>{ 
-    const badge=document.getElementById('dicomBadge');
-    if(badge) badge.textContent=`DICOM ready — ` + (dwvApp.getNumberOfLoadedData ? dwvApp.getNumberOfLoadedData() : 'done');
-    badge.style.display='inline';
-    badge.style.background='#052e1a'; badge.style.borderColor='#166534'; badge.style.color='#86efac';
-  });
-  dwvApp.addEventListener('loadprogress', e=>{ 
-    const badge=document.getElementById('dicomBadge');
-    if(e && typeof e.loaded!=='undefined' && typeof e.total!=='undefined'){
-      badge.style.display='inline';
-      badge.textContent=`Loading DICOM ${e.loaded}/${e.total}…`;
-    }
-  });
-  dwvApp.addEventListener('error', e=>{ 
-    console.error('DWV error', e); 
-    const badge=document.getElementById('dicomBadge');
-    badge.style.display='inline';
-    badge.textContent='Error loading DICOM: ' + (e.message||e.error||'unknown') + ' — try local file picker or PNG';
-    badge.style.background='#3f1212'; badge.style.borderColor='#7f1d1d'; badge.style.color='#fca5a5';
-  });
-  dwvApp.addEventListener('loadstart', e=>{
-    const badge=document.getElementById('dicomBadge');
-    badge.style.display='inline';
-    badge.textContent='Starting DICOM load…';
-  });
-  // drag & drop
-  const dwvEl = document.getElementById('dwv');
-  dwvEl.addEventListener('dragover', e=> e.preventDefault());
-  dwvEl.addEventListener('drop', e=>{
-    e.preventDefault();
-    loadLocalDicom(e.dataTransfer.files);
+// Cornerstone (replaces DWV — avoids id shadow bug and multi-file black canvas)
+let csStack={imageIds:[],currentIndex:0};
+function ensureCornerstone(){
+  return new Promise((resolve,reject)=>{
+    if(window.cornerstone && window.dicomParser && window.cornerstoneWADOImageLoader) { resolve(); return; }
+    const load=(src,id)=> new Promise((res,rej)=>{
+      if(document.querySelector(`script[data-cs="${id}"]`)){ res(); return; }
+      const s=document.createElement('script'); s.src=src; s.dataset.cs=id;
+      s.onload=()=>res(); s.onerror=()=>rej(new Error(id+' load error'));
+      document.head.appendChild(s);
+    });
+    load('https://unpkg.com/cornerstone-core@2.6.1/dist/cornerstone.min.js','cs-core')
+      .then(()=> load('https://unpkg.com/dicom-parser@1.8.21/dist/dicomParser.min.js','dicom-parser'))
+      .then(()=> load('https://unpkg.com/cornerstone-wado-image-loader@4.13.2/dist/cornerstoneWADOImageLoader.min.js','wado'))
+      .then(()=>{ try{ cornerstoneWADOImageLoader.external.cornerstone=cornerstone; cornerstoneWADOImageLoader.external.dicomParser=dicomParser; cornerstoneWADOImageLoader.configure({useWebWorkers:false}); }catch(e){} resolve(); })
+      .catch(reject);
   });
 }
-function loadDicomSeries(){
-  const name=document.getElementById('dicomSeries').value;
-  loadDicomSeriesByName(name);
+async function csDisplay(imageId){
+  const el=document.getElementById('cs-viewport');
+  if(!el) return;
+  try{ cornerstone.enable(el); }catch(e){}
+  try{
+    const image=await cornerstone.loadImage(imageId);
+    cornerstone.displayImage(el,image);
+    // wheel scroll
+    el.onwheel=(e)=>{ e.preventDefault(); const d=e.deltaY>0?1:-1; const n=Math.min(Math.max(csStack.currentIndex+d,0),csStack.imageIds.length-1); if(n!==csStack.currentIndex){ csStack.currentIndex=n; csDisplay(csStack.imageIds[n]); const b=document.getElementById('dicomBadge'); if(b){ b.style.display='inline'; b.textContent=`Image ${n+1} / ${csStack.imageIds.length}`; } } };
+    // drag window/level
+    let dragging=false,sx=0,sy=0,ww=image.windowWidth,wc=image.windowCenter;
+    el.onmousedown=e=>{ dragging=true; sx=e.clientX; sy=e.clientY; ww=image.windowWidth; wc=image.windowCenter; };
+    el.onmouseup=()=> dragging=false; el.onmouseleave=()=> dragging=false;
+    el.onmousemove=e=>{ if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; try{ const vp=cornerstone.getViewport(el); vp.voi.windowWidth=Math.max(1,ww+dx*2); vp.voi.windowCenter=wc+dy*2; cornerstone.setViewport(el,vp); }catch(e){} };
+  }catch(e){ const b=document.getElementById('dicomBadge'); if(b){ b.style.display='inline'; b.style.background='#3f1212'; b.style.color='#fca5a5'; b.textContent='Cornerstone error: '+(e.message||e).slice(0,140); } }
 }
-function loadDicomSeriesByName(name){
+function csPrev(){ const n=Math.max(0,csStack.currentIndex-1); if(n!==csStack.currentIndex){ csStack.currentIndex=n; csDisplay(csStack.imageIds[n]); const b=document.getElementById('dicomBadge'); if(b) b.textContent=`Image ${n+1} / ${csStack.imageIds.length}`; } }
+function csNext(){ const n=Math.min(csStack.imageIds.length-1,csStack.currentIndex+1); if(n!==csStack.currentIndex){ csStack.currentIndex=n; csDisplay(csStack.imageIds[n]); const b=document.getElementById('dicomBadge'); if(b) b.textContent=`Image ${n+1} / ${csStack.imageIds.length}`; } }
+function csReset(){ const el=document.getElementById('cs-viewport'); try{ cornerstone.reset(el); }catch(e){} }
+async function loadLocalDicom(files){
+  if(!files||files.length===0) return;
   showTab('dicom');
-  const s = manifest.series.find(x=> x.name===name);
-  if(!s || !s.dicoms || s.dicoms.length===0){ alert('No DICOM URLs for this series. Use local file picker.'); return; }
-  const urls = s.dicoms.map(u=> prefix + u);
-  console.log('Loading', urls.slice(0,3), '...', urls.length);
-  const badge=document.getElementById('dicomBadge');
-  badge.style.display='inline';
-  badge.style.background='#0f1f3a'; badge.style.borderColor='#1e3a5f'; badge.style.color='#7dd3fc';
-  badge.textContent=`Loading ${urls.length} DICOMs… (0/${urls.length})`;
-  // reset previous data so new series renders cleanly
-  try{ dwvApp.resetDisplay(); }catch(e){}
-  // small delay to let reset render before heavy load
-  setTimeout(()=> dwvApp.loadURLs(urls), 50);
+  await ensureCornerstone();
+  const ids=[]; for(let i=0;i<files.length;i++){ ids.push(cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i])); }
+  csStack={imageIds:ids,currentIndex:0};
+  const b=document.getElementById('dicomBadge'); if(b){ b.style.display='inline'; b.style.background='#052e1a'; b.style.color='#86efac'; b.textContent=`Loaded ${ids.length} local files — scroll/drag to browse`; }
+  if(ids.length) await csDisplay(ids[0]);
 }
-function loadLocalDicom(files){
-  if(!files || files.length===0) return;
+async function loadDicomSeriesByName(name){
   showTab('dicom');
-  dwvApp.loadFiles(files);
+  const s=manifest.series.find(x=>x.name===name);
+  if(!s||!s.dicoms||s.dicoms.length===0){ alert('No DICOM URLs for this series.'); return; }
+  await ensureCornerstone();
+  await new Promise(r=>setTimeout(r,80));
+  const urls=s.dicoms.map(u=> prefix + u);
+  const ids=urls.map(u=> 'wadouri:'+ (u.startsWith('http')?u: location.origin+'/'+u.replace(/^\//,'')));
+  // for local http.server prefix is ../ etc — make absolute via fetch URL
+  // simpler: use CDN absolute for GitHub Pages case
+  const absIds=s.dicoms.map(u=> 'wadouri:' + (u.startsWith('http')?u: (isInWebsite? location.origin+location.pathname.replace(/\/Website\/.*/, '/') : location.origin+'/') + u));
+  // fallback to prefix-based if above fails, use absIds
+  csStack={imageIds:absIds,currentIndex:0};
+  const b=document.getElementById('dicomBadge'); if(b){ b.style.display='inline'; b.style.background='#0f1f3a'; b.style.color='#7dd3fc'; b.textContent=`Loading ${absIds.length} DICOMs…`; }
+  try{ await csDisplay(absIds[0]); if(b) b.textContent=`Image 1 / ${absIds.length} — scroll to browse`; }catch(e){ if(b) b.textContent='Failed — try local file or check CORS'; }
 }
+function loadDicomSeries(){ const name=document.getElementById('dicomSeries').value; loadDicomSeriesByName(name); }
+// drag-drop
+document.addEventListener('DOMContentLoaded', ()=>{
+  const el=document.getElementById('cs-viewport');
+  if(!el) return;
+  el.addEventListener('dragover',e=>e.preventDefault());
+  el.addEventListener('drop',e=>{ e.preventDefault(); if(e.dataTransfer.files) loadLocalDicom(e.dataTransfer.files); });
+});
 </script>
 </body>
 </html>
