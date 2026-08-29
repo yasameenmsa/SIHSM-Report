@@ -132,6 +132,28 @@
         <button class="btn-ghost" onclick="dwvApp && dwvApp.setTool('WindowLevel')">Window/Level</button>
         <button class="btn-ghost" onclick="dwvApp && dwvApp.resetDisplay()">Reset</button>
       </div>
+      <!-- Doctor Download — ZIPs hosted as GitHub Release assets (bypasses 100MB Pages limit) -->
+      <div style="margin-top:18px;padding:14px;background:#0f172a;border:1px solid #1e3a5f;border-radius:12px">
+        <h3 style="margin:0 0 6px;font-size:14px">للطبيب — For the Doctor: تحميل DICOM الأصلي (ZIP)</h3>
+        <p style="margin:0 0 10px;color:var(--muted);font-size:13px">كل سلسلة مضغوطة كـ ZIP (ملفات DICOM الأصلية كما من الجهاز). افتحها بأي عارض DICOM (RadiAnt، Weasis، Horos). ZIP_STORED — نفس الحجم الأصلي، لا فقدان.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px" id="zipDownloads">
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_001_Topogram_0.60_Tr20_cor.zip">⬇ Series_001 Topogram (0.5 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_002_Neck_NC_2.00_Br40_S1_ax.zip">⬇ Series_002 Neck ax (155 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_004_Neck_NC_2.00_Br40_S1_cor.zip">⬇ Series_004 Neck cor (155 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_006_Neck_NC_2.00_Br40_S1_sag.zip">⬇ Series_006 Neck sag (129 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_008_Liver_NC_3.00_Br40_S3_ax.zip">⬇ Series_008 Liver ax (77 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_010_CAP_PlusC_3.00_Br40_S3_ax.zip">⬇ Series_010 CAP +C ax (306 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_012_CAP_PlusC_3.00_Br40_S3_cor.zip">⬇ Series_012 CAP +C cor (152 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_014_CAP_PlusC_3.00_Br40_S3_sag.zip">⬇ Series_014 CAP +C sag (295 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_016_CAP_PlusC_1.00_Bl56_S1_ax_Lung_HR.zip">⬇ Series_016 Lung HR (193 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_018_Neck_PlusC_2.00_Br40_S1_ax.zip">⬇ Series_018 Neck +C ax (176 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_020_Neck_PlusC_2.00_Br40_S1_cor.zip">⬇ Series_020 Neck +C cor (175 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_022_Neck_PlusC_2.00_Br40_S1_sag.zip">⬇ Series_022 Neck +C sag (114 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_024_Abdomen_Delayed_3.00_Br40_S3_ax.zip">⬇ Series_024 Abdomen (194 MB)</a>
+          <a class="btn-ghost" style="text-decoration:none;text-align:center" href="https://github.com/yasameenmsa/SIHSM-Report/releases/download/v1.0/Series_501_Patient_Protocol.zip">⬇ Series_501 Protocol (0.5 MB)</a>
+        </div>
+        <p style="margin:10px 0 0;color:var(--muted);font-size:12px">All ZIPs: <a href="https://github.com/yasameenmsa/SIHSM-Report/releases/tag/v1.0" target="_blank" style="color:var(--accent)">github.com/yasameenmsa/SIHSM-Report/releases/tag/v1.0</a> • Total 2.1 GB • Password for site: <code>sihsm2026</code></p>
+      </div>
     </div>
   </main>
 </div>
@@ -315,6 +337,32 @@ function initDwv(){
     dataViewConfigs: {'*': [{divId: 'dwv'}]},
     tools: {Scroll: {}, ZoomAndPan: {}, WindowLevel: {}}
   });
+  // global listeners — must be BEFORE loadURLs
+  dwvApp.addEventListener('load', ()=>{ 
+    const badge=document.getElementById('dicomBadge');
+    if(badge) badge.textContent=`DICOM ready — ` + (dwvApp.getNumberOfLoadedData ? dwvApp.getNumberOfLoadedData() : 'done');
+    badge.style.display='inline';
+    badge.style.background='#052e1a'; badge.style.borderColor='#166534'; badge.style.color='#86efac';
+  });
+  dwvApp.addEventListener('loadprogress', e=>{ 
+    const badge=document.getElementById('dicomBadge');
+    if(e && typeof e.loaded!=='undefined' && typeof e.total!=='undefined'){
+      badge.style.display='inline';
+      badge.textContent=`Loading DICOM ${e.loaded}/${e.total}…`;
+    }
+  });
+  dwvApp.addEventListener('error', e=>{ 
+    console.error('DWV error', e); 
+    const badge=document.getElementById('dicomBadge');
+    badge.style.display='inline';
+    badge.textContent='Error loading DICOM: ' + (e.message||e.error||'unknown') + ' — try local file picker or PNG';
+    badge.style.background='#3f1212'; badge.style.borderColor='#7f1d1d'; badge.style.color='#fca5a5';
+  });
+  dwvApp.addEventListener('loadstart', e=>{
+    const badge=document.getElementById('dicomBadge');
+    badge.style.display='inline';
+    badge.textContent='Starting DICOM load…';
+  });
   // drag & drop
   const dwvEl = document.getElementById('dwv');
   dwvEl.addEventListener('dragover', e=> e.preventDefault());
@@ -332,13 +380,15 @@ function loadDicomSeriesByName(name){
   const s = manifest.series.find(x=> x.name===name);
   if(!s || !s.dicoms || s.dicoms.length===0){ alert('No DICOM URLs for this series. Use local file picker.'); return; }
   const urls = s.dicoms.map(u=> prefix + u);
-  // DWV loadURLs expects absolute or relative fetchable URLs
   console.log('Loading', urls.slice(0,3), '...', urls.length);
-  dwvApp.loadURLs(urls);
-  document.getElementById('dicomBadge').style.display='inline';
-  document.getElementById('dicomBadge').textContent=`Loading ${urls.length} DICOMs…`;
-  dwvApp.addEventListener('load', ()=>{ document.getElementById('dicomBadge').textContent=`DICOM ready — ${urls.length} files`; });
-  dwvApp.addEventListener('error', e=>{ console.error(e); document.getElementById('dicomBadge').textContent='Error loading DICOM (need http server)'; });
+  const badge=document.getElementById('dicomBadge');
+  badge.style.display='inline';
+  badge.style.background='#0f1f3a'; badge.style.borderColor='#1e3a5f'; badge.style.color='#7dd3fc';
+  badge.textContent=`Loading ${urls.length} DICOMs… (0/${urls.length})`;
+  // reset previous data so new series renders cleanly
+  try{ dwvApp.resetDisplay(); }catch(e){}
+  // small delay to let reset render before heavy load
+  setTimeout(()=> dwvApp.loadURLs(urls), 50);
 }
 function loadLocalDicom(files){
   if(!files || files.length===0) return;
